@@ -18,13 +18,13 @@ class BellhopElement extends HTMLElement {
 };
 
 /**
- * Bellhop element class.
+ * Bellhop nav button class.
  * @class
 */
-class Bellhop extends BellhopElement {
-  static _tag = 'bell-hop';
+class BellButton extends BellhopElement {
+  static _tag = 'bell-button';
   constructor() {
-    super();  
+    super();
   };
 };
 
@@ -32,7 +32,7 @@ class Bellhop extends BellhopElement {
  * Bellhop endpoint class.
  * @class
 */
-class BellPoint extends HTMLElement {
+class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
   constructor() {
     super();
@@ -40,11 +40,47 @@ class BellPoint extends HTMLElement {
 };
 
 /**
- * Bellhop nav button class.
+ * Bellhop element class.
  * @class
 */
-class BellButton extends HTMLElement {
-  static _tag = 'bell-button';
+class Bellhop extends BellhopElement {
+  static _tag = 'bell-hop';
+  
+  static {
+
+    // Creating a stylistic library block.
+    const style = document.createElement('style');
+    document.head.append(style);
+    style.innerHTML = `
+      ${BellPoint._tag} {
+        &[active] {
+          & > ${BellPoint._tag} {
+            display: none;
+          }
+        }
+        &:not([active], :has([active])) {
+          display: none;
+        }
+        &:not([active]):has([active]) {
+          & > :not(${BellPoint._tag}) {
+            display: none;
+          }
+        }
+      }
+
+      ${Bellhop._tag},
+      ${Bellhop._tag} ${BellPoint._tag} {
+        & {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    `;
+  };
+
   constructor() {
     super();
   };
