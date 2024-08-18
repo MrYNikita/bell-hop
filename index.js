@@ -47,6 +47,8 @@ class Bellhop extends BellhopElement {
   static _tag = 'bell-hop';
   
   static {
+
+    // Creating a stylistic library block.
     const style = document.createElement('style');
     document.head.append(style);
     style.innerHTML = `
