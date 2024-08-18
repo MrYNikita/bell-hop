@@ -24,7 +24,7 @@ class BellhopElement extends HTMLElement {
 class Bellhop extends BellhopElement {
   static _tag = 'bell-hop';
   constructor() {
-    super();  
+    super();
   };
 };
 
@@ -32,7 +32,7 @@ class Bellhop extends BellhopElement {
  * Bellhop endpoint class.
  * @class
 */
-class BellPoint extends HTMLElement {
+class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
   constructor() {
     super();
@@ -43,7 +43,7 @@ class BellPoint extends HTMLElement {
  * Bellhop nav button class.
  * @class
 */
-class BellButton extends HTMLElement {
+class BellButton extends BellhopElement {
   static _tag = 'bell-button';
   constructor() {
     super();
