@@ -15,6 +15,29 @@ class BellhopElement extends HTMLElement {
   constructor() {
     super();
   };
+
+  /**
+   * @arg {string} key
+   * @arg {string} attr
+   * @protected
+  */
+  _checkSetStrAttr(key, attr) {
+
+    if (!key) {
+      throw new Error('Ключ не указан.');
+    } else if (typeof key !== 'string') {
+      throw new Error('Ключ не является строковым значением.');
+    } else if (!attr) {
+      throw new TypeError(`Значение аттрибута ${key} не указано.`);
+    } else if (typeof attr !== 'string') {
+      throw new TypeError(`Значение аттрибута ${key} не является строковым.`);
+    };
+
+    this[key] = attr;
+
+    return this;
+  };
+
 };
 
 /**
@@ -25,6 +48,13 @@ class BellButton extends BellhopElement {
   static _tag = 'bell-button';
   constructor() {
     super();
+
+    const shadow = this.attachShadow({
+      mode: 'open',
+    });
+
+    const slot = document.createElement('slot');
+    shadow.append(slot);
   };
 };
 
@@ -34,9 +64,69 @@ class BellButton extends BellhopElement {
 */
 class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
+  
   constructor() {
     super();
+
+    const shadow = this.attachShadow({
+      mode: 'open',
+    });
+
+    const slot = document.createElement('slot');
+    shadow.append(slot);
   };
+
+  get to() {
+    return this.getAttribute('to');
+  };
+
+  get name() {
+    return this.getAttribute('name');
+  };
+
+  get next() {
+    return this.getAttribute('next');
+  }
+
+  /**
+   * @arg {string} to
+  */
+  set to(to) {
+
+    if (this.getAttribute('next')) {
+      throw new Error('Параметр `to` нельзя указать для bell-point, т.к. у него уже установлен `next`.');
+    };
+
+    return this._checkSetStrAttr('to', to);
+  };
+
+  /**
+   * @arg {string} name
+  */
+  set name(name) {
+    return this._checkSetStrAttr('name', name);
+  }
+
+  /**
+   * @arg {string} next
+  */
+  set next(next) {
+
+    if (this.to) {
+      throw new Error('Параметр `next` нельзя указать для bell-point, т.к. у него уже установлен `to`.');
+    };
+
+    return this._checkSetStrAttr('next', next);
+  };
+
+  /**
+   * 
+  */
+  activate() {
+    this.setAttribute('activate', '');
+    return this;
+  };
+
 };
 
 /**
@@ -83,7 +173,19 @@ class Bellhop extends BellhopElement {
 
   constructor() {
     super();
+
+    const shadow = this.attachShadow({
+      mode: 'open',
+    });
+
+    const slot = document.createElement('slot');
+    shadow.append(slot);
   };
+
+  getActivePoint() {
+    return this.querySelector(`${BellPoint._tag}[active]`);
+  };
+
 };
 
 // Define bellhop tag's.
