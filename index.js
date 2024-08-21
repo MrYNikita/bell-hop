@@ -45,7 +45,19 @@ class BellhopElement extends HTMLElement {
  * @class
 */
 class BellButton extends BellhopElement {
+
   static _tag = 'bell-button';
+
+  /**
+   * @type {string?}
+  */
+  to = null;
+  /**
+   * @type {string?}
+  */
+  next = null;
+
+
   constructor() {
     super();
 
@@ -55,7 +67,93 @@ class BellButton extends BellhopElement {
 
     const slot = document.createElement('slot');
     shadow.append(slot);
+
+    this.addEventListener('click', e => {
+      if (this.step && this.to) {
+        throw new Error('Invalid configuration for to and step parameters specified.');
+      };
+
+      const bellhop = this.getBellhop();
+      /** @type {(point: BellPoint) => void} */
+      const nextStep = point => bellhop.activatePoint(point);
+
+      if (this.to) {
+        bellhop.getActivePoint(bellhop.getPoint(to));
+      } else {
+        
+        const parentPoint = this.getPoint().parentElement;
+
+        if (parentPoint instanceof BellPoint && parentPoint.getAttribute('name') === this.step) {
+          nextStep(parentPoint);
+          return;
+        };
+
+        /** @type {BellPoint?} */
+        const neighbourPoint = Array.from(this.parentElement.children).find(point => point.getAttribute('name') === this.step);
+
+        if (neighbourPoint) {
+          nextStep(neighbourPoint);
+          return;
+        };
+
+        const innerPoint = parentPoint.querySelector(`${BellPoint._tag}[name=${this.getPoint().getAttribute('name')}] > ${BellPoint._tag}[name=${this.step}]`);
+
+        if (innerPoint) {
+          nextStep(innerPoint);
+        };
+
+      };
+
+    });
+
   };
+
+  get to() {
+    return this.getAttribute('to');
+  };
+
+  get step() {
+    return this.getAttribute('step');
+  };
+
+  /**
+   * @arg {string} to
+  */
+  set to(to) {
+
+    if (this.getAttribute('step')) {
+      throw new Error('The `to` parameter cannot be specified for bell-point, because it already has `step` installed.');
+    };
+
+    return this._checkSetStrAttr('to', to);
+  };
+
+  /**
+   * @arg {string} step
+  */
+  set step(step) {
+
+    if (this.to) {
+      throw new Error('The `step` parameter cannot be specified for bell-point, because it already has `to` installed.');
+    };
+
+    return this._checkSetStrAttr('step', step);
+  };
+
+  /**
+   * Getting parent endpoint.
+   * @returns {BellPoint}
+  */
+  getPoint() {
+    return this.parentElement;
+  };
+  /**
+   * @returns {Bellhop}
+  */
+  getBellhop() {
+    return this.closest(Bellhop._tag);
+  };
+
 };
 
 /**
@@ -65,6 +163,11 @@ class BellButton extends BellhopElement {
 class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
   
+  /**
+   * @type {string}
+  */
+  name;
+
   constructor() {
     super();
 
@@ -76,28 +179,12 @@ class BellPoint extends BellhopElement {
     shadow.append(slot);
   };
 
-  get to() {
-    return this.getAttribute('to');
-  };
-
   get name() {
     return this.getAttribute('name');
   };
 
-  get next() {
-    return this.getAttribute('next');
-  }
-
-  /**
-   * @arg {string} to
-  */
-  set to(to) {
-
-    if (this.getAttribute('next')) {
-      throw new Error('Параметр `to` нельзя указать для bell-point, т.к. у него уже установлен `next`.');
-    };
-
-    return this._checkSetStrAttr('to', to);
+  get root() {
+    return !!this.getAttribute('root');
   };
 
   /**
@@ -105,26 +192,51 @@ class BellPoint extends BellhopElement {
   */
   set name(name) {
     return this._checkSetStrAttr('name', name);
-  }
-
-  /**
-   * @arg {string} next
-  */
-  set next(next) {
-
-    if (this.to) {
-      throw new Error('Параметр `next` нельзя указать для bell-point, т.к. у него уже установлен `to`.');
-    };
-
-    return this._checkSetStrAttr('next', next);
   };
 
   /**
-   * 
+   * Endpoint activation.
   */
   activate() {
-    this.setAttribute('activate', '');
+    this.setAttribute('active', '');
     return this;
+  };
+  /**
+   * Endpoint deactivation.
+  */
+  deactivate() {
+    this.removeAttribute('active');
+    return this;
+  };
+
+  /**
+   * Getting a bellhop.
+   * @returns {Bellhop}
+  */
+  getBellhop() {
+    return this.closest(Bellhop._tag);
+  };
+  /**
+   * Get all next endpoints.
+   * @returns {BellPoint[]}
+  */
+  getNextPoints() {
+    return Array.from(this.children).filter(e => e instanceof BellButton && e.step).map(b => b.getBellhop().getPoint(b.step));
+  };
+  /**
+   * Get all endpoints where it is possible to move through a step.
+   * @returns {BellPoint[]}
+  */
+  getPassablePoints() {
+    const result = [];
+
+    if (this.parentElement instanceof BellPoint) result.push(this.parentElement);
+
+    for (const neighbourPoint of this.parentElement.children) if (neighbourPoint instanceof BellPoint) result.push(neighbourPoint);
+
+    for (const childrenPoint of this.children) if (childrenPoint instanceof BellPoint) result.push(childrenPoint);
+
+    return result;
   };
 
 };
@@ -164,6 +276,7 @@ class Bellhop extends BellhopElement {
           width: 100%;
           height: 100%;
           display: flex;
+          flex-flow: column;
           align-items: center;
           justify-content: center;
         }
@@ -182,8 +295,89 @@ class Bellhop extends BellhopElement {
     shadow.append(slot);
   };
 
+  /**
+   * Moves from the active end point to the specified one.
+   * @arg {string} name
+  */
+  move(name) {
+    return this;
+  };
+
+  /**
+   * @arg {BellPoint} point
+  */
+  activatePoint(point) {
+    this.deactivatePoint(this.getActivePoint());
+    point.activate();
+    return this;
+  };
+  /**
+   * @arg {BellPoint} point
+  */
+  deactivatePoint(point) {
+    point.deactivate();
+    return this;
+  };
+
+  /**
+   * Getting all possible paths from the root element.
+  */
+  getPaths() {
+    const rootPoint = this.getRootPoint();
+
+    if (!rootPoint) {
+      throw new Error(`It is impossible to define a root end point from which paths could be drawn.`);
+    };
+
+    const paths = rootPoint.getNextPoints().map(point => [rootPoint, point]);
+    const nextPaths = [];
+
+    while (paths.length) {
+
+      const path = paths.pop();
+      const lastpoint = path.pop();
+      const nextPoints = lastpoint.getNextPoints();
+
+      for (const point of nextPoints) {
+        if (path.includes(point))
+      };
+
+    };
+
+  };
+
+  /**
+   * Getting endpoint by name.
+   * @arg {string} name
+   * @returns {BellPoint}
+  */
+  getPoint(name) {
+    return this._getUniquePoint(`name=${name}`);
+  };
+  /**
+   * Get all possible end points.
+   * @returns {BellPoint[]}
+  */
+  getPoints() {
+    return Array.from(this.querySelectorAll(`${BellPoint._tag}:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag})`));
+  };
+  /**
+   * Getting the root endpoint.
+   * @returns {BellPoint}
+  */
+  getRootPoint() {
+    return this._getUniquePoint('root');
+  };
+  /**
+   * Getting the active endpoint.
+   * @returns {BellPoint}
+  */
   getActivePoint() {
-    return this.querySelector(`${BellPoint._tag}[active]`);
+    return this._getUniquePoint('active');
+  };
+
+  _getUniquePoint(attr) {
+    return this.querySelector(`${BellPoint._tag}[${attr}]:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag}[${attr}])`);
   };
 
 };

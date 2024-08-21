@@ -7,13 +7,20 @@
   </head>
   <body>
     <bell-hop>
-      <bell-point active></bell-point>
-      <bell-point></bell-point>
-      <bell-point></bell-point>
-      <bell-point></bell-point>
-      <bell-hop>
-        <bell-point active></bell-point>
-      </bell-hop>
+      <bell-point active root name="S">
+        <bell-button step="A">S->A</bell-button>
+        <bell-button step="B">S->B</bell-button>
+        <bell-button step="C">S->C</bell-button>
+      </bell-point>
+      <bell-point name="A">
+        <bell-button step="S">A->S</bell-button>
+      </bell-point>
+      <bell-point name="B">
+        <bell-button step="S">B->S</bell-button>
+      </bell-point>
+      <bell-point name="C">
+        <bell-button step="S">C->S</bell-button>
+      </bell-point>
     </bell-hop>
     <script src="index.js"></script>
   </body>
