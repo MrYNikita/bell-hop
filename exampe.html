@@ -11,9 +11,15 @@
         <bell-button step="A">S->A</bell-button>
         <bell-button step="B">S->B</bell-button>
         <bell-button step="C">S->C</bell-button>
+        <bell-button to="D">S=>D</bell-button>
       </bell-point>
       <bell-point name="A">
         <bell-button step="S">A->S</bell-button>
+        <bell-button step="D">A->D</bell-button>
+        <bell-point name="D">
+          <bell-button to="S">D=>S</bell-button>
+          <bell-button step="A">D->A</bell-button>
+        </bell-point>
       </bell-point>
       <bell-point name="B">
         <bell-button step="S">B->S</bell-button>

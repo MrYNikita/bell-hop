@@ -73,36 +73,9 @@ class BellButton extends BellhopElement {
         throw new Error('Invalid configuration for to and step parameters specified.');
       };
 
-      const bellhop = this.getBellhop();
-      /** @type {(point: BellPoint) => void} */
-      const nextStep = point => bellhop.activatePoint(point);
+      const to = this.getAttribute('to');
 
-      if (this.to) {
-        bellhop.getActivePoint(bellhop.getPoint(to));
-      } else {
-        
-        const parentPoint = this.getPoint().parentElement;
-
-        if (parentPoint instanceof BellPoint && parentPoint.getAttribute('name') === this.step) {
-          nextStep(parentPoint);
-          return;
-        };
-
-        /** @type {BellPoint?} */
-        const neighbourPoint = Array.from(this.parentElement.children).find(point => point.getAttribute('name') === this.step);
-
-        if (neighbourPoint) {
-          nextStep(neighbourPoint);
-          return;
-        };
-
-        const innerPoint = parentPoint.querySelector(`${BellPoint._tag}[name=${this.getPoint().getAttribute('name')}] > ${BellPoint._tag}[name=${this.step}]`);
-
-        if (innerPoint) {
-          nextStep(innerPoint);
-        };
-
-      };
+      to ? this.getPoint().to(this) : this.getPoint().step(this);
 
     });
 
@@ -192,6 +165,56 @@ class BellPoint extends BellhopElement {
   */
   set name(name) {
     return this._checkSetStrAttr('name', name);
+  };
+
+  /**
+   * Jump to the specified end point if possible.
+   * @arg {BellButton|BellPoint|string} to
+  */
+  to(to) {
+
+    const bellhop = this.getBellhop();
+
+    if (to instanceof BellButton) to = to.getAttribute('to');
+    if (typeof to === 'string') to = bellhop.getPoint(to);
+
+    this.getBellhop().activatePoint(to);
+
+    return this;
+  };
+
+  /**
+   * Take a step to the specified end point, if possible.
+   * @arg {BellButton|BellPoint|string} step
+  */
+  step(step) {
+
+    const bellhop = this.getBellhop();
+    const parentPoint = this.parentElement;
+
+    if (step instanceof BellButton) step = step.getAttribute('step');
+    if (typeof step === 'string') step = bellhop.getPoint(step);
+
+    if (parentPoint instanceof BellPoint && parentPoint === step) {
+      bellhop.activatePoint(parentPoint);
+      return this;
+    };
+
+    /** @type {BellPoint?} */
+    const neighbourPoint = Array.from(this.parentElement.children).find(point => point=== step);
+
+    if (neighbourPoint) {
+      bellhop.activatePoint(neighbourPoint);
+      return this;
+    };
+
+    const innerPoint = Array.from(this.children).find(point => point instanceof BellPoint && point === step);
+
+    if (innerPoint) {
+      bellhop.activatePoint(innerPoint);
+    };
+
+    return this;
   };
 
   /**
@@ -297,9 +320,15 @@ class Bellhop extends BellhopElement {
 
   /**
    * Moves from the active end point to the specified one.
-   * @arg {string} name
+   * @arg {BellPoint} to
   */
-  move(name) {
+  stepTo(to) {
+    const steps = this.getSteps(null, to);
+
+    if (steps.length) for (let index = 0; index < steps.length; index++) {
+      const point = steps[0];
+    };
+
     return this;
   };
 
@@ -321,28 +350,36 @@ class Bellhop extends BellhopElement {
 
   /**
    * Getting all possible paths from the root element.
+   * @arg {BellPoint} root
+   * @arg {BellPoint?} to
   */
-  getPaths() {
-    const rootPoint = this.getRootPoint();
+  getSteps(root = this.getRootPoint(), to) {
+    const rootPoint = root;
 
     if (!rootPoint) {
       throw new Error(`It is impossible to define a root end point from which paths could be drawn.`);
     };
 
-    const paths = rootPoint.getNextPoints().map(point => [rootPoint, point]);
-    const nextPaths = [];
+    const paths = [];
+    const nextPaths = [[rootPoint]];
 
-    while (paths.length) {
+    while (nextPaths.length) {
 
-      const path = paths.pop();
-      const lastpoint = path.pop();
+      const path = nextPaths.pop();
+      const lastpoint = path.at(-1);
       const nextPoints = lastpoint.getNextPoints();
 
       for (const point of nextPoints) {
-        if (path.includes(point))
-      };
 
+        if (path.includes(point)) {
+          paths.push(path);
+          continue;
+        };
+        nextPaths.push([...path, point]);
+      };
     };
+
+    return to ? paths.filter(path => path.includes(to)) : paths;
 
   };
 
