@@ -33,11 +33,107 @@ class BellhopElement extends HTMLElement {
       throw new TypeError(`Значение аттрибута ${key} не является строковым.`);
     };
 
-    this[key] = attr;
+    this.setAttribute(key, attr);
 
     return this;
   };
 
+};
+
+class BellEven extends BellhopElement {
+  
+  static _tag = 'bell-even';
+
+  static get observedAttributes() {
+    return ['cond', 'act', 'once', 'delt', 'name'];
+  };
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case 'act': this._act = newValue; break;
+      case 'name': this._name = newValue; break;
+      case 'cond': this._cond = newValue; break;
+      case 'once': this._once = !!newValue; break;
+      case 'delt': this._delt = !!newValue; break;
+    };
+  };
+  
+  /**
+   * @type {import("./type").TBellEven['name']}
+   * @protected
+  */
+  _name;
+  /**
+   * @type {import("./type").TBellEven['act']}
+   * @protected
+  */
+  _act;
+  /**
+   * @type {import("./type").TBellEven['cond']}
+   * @protected
+  */
+  _cond;
+  /**
+   * @type {import("./type").TBellEven['once']}
+   * @protected
+  */
+  _once;
+  /**
+   * @type {import("./type").TBellEven['delt']}
+   * @protected
+  */
+  _delt;
+
+  constructor() {
+    super();
+  };
+
+  get act() {
+    return new Function('self', this._act);
+  };
+  get cond() {
+    return new Function('self', this._cond);
+  };
+  get delt() {
+    return this._delt;
+  };
+  get once() {
+    return this._once;
+  };
+  get name() {
+    return this._name;
+  };
+
+  /**
+   * @arg {(self:BellPoint) => void}
+  */
+  set act(action) {
+    this.setAttribute('act', action.toString());
+  };
+  /**
+   * @arg {(self:BellPoint) => void}
+  */
+  set cond(cond) {
+    this.setAttribute('cond', cond.toString());
+  };
+  /**
+   * @arg {string}
+  */
+  set name(name) {
+    this.setAttribute('name', name);
+  };
+  /**
+   * @arg {boolean} isOnce
+  */
+  set once(isOnce) {
+    this._once = !!isOnce;
+  };
+  /**
+   * @arg {boolean} isDelt
+  */
+  set delt(isDelt) {
+    this._delt = !!isDelt;
+  };
 };
 
 /**
@@ -48,14 +144,27 @@ class BellButton extends BellhopElement {
 
   static _tag = 'bell-button';
 
+  static get observedAttributes() {
+    return ['to', 'step'];
+  };
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case 'to':
+      case 'step': this[`_${name}`] = newValue; break;
+    };
+  };
+
   /**
    * @type {string?}
+   * @protected
   */
-  to = null;
+  _to;
   /**
    * @type {string?}
+   * @protected
   */
-  next = null;
+  _step;
 
 
   constructor() {
@@ -73,10 +182,9 @@ class BellButton extends BellhopElement {
         throw new Error('Invalid configuration for to and step parameters specified.');
       };
 
-      const to = this.getAttribute('to');
+      const point = this.getPoint();
 
-      to ? this.getPoint().to(this) : this.getPoint().step(this);
-
+      this.to ? point.to(this) : point.step(this);
     });
 
   };
@@ -135,11 +243,45 @@ class BellButton extends BellhopElement {
 */
 class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
+
+  static get observedAttributes() {
+    return ['name', 'prev', 'root', 'active'];
+  };
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case 'name': this._name = newValue; break;
+      case 'prev': this._prev = !!newValue; break;
+      case 'root': this._root = !!newValue; break;
+      case 'active': this._active = !!newValue; break;
+    };
+  };
   
   /**
    * @type {string}
+   * @protected
   */
-  name;
+  _name;
+  /**
+   * @type {boolean}
+   * @protected
+  */  
+  _prev;
+  /**
+   * @type {boolean}
+   * @protected
+  */
+  _root;
+  /**
+   * @type {boolean}
+   * @protected
+  */
+  _active;
+  /**
+   * @type {import("./type").TBellEven[]}
+   * @protected
+  */
+  _evens = [];
 
   constructor() {
     super();
@@ -153,18 +295,41 @@ class BellPoint extends BellhopElement {
   };
 
   get name() {
-    return this.getAttribute('name');
+    return this._name;
   };
-
   get root() {
-    return !!this.getAttribute('root');
+    return this._root;
+  };
+  get prev() {
+    return this._prev;
+  };
+  get active() {
+    return this._active;
   };
 
   /**
    * @arg {string} name
   */
   set name(name) {
-    return this._checkSetStrAttr('name', name);
+    this._checkSetStrAttr('name', name);
+  };
+  /**
+   * @arg {boolean} prev
+  */
+  set prev(prev) {
+    this.setAttribute('prev', prev ? '' : null);
+  };
+  /**
+   * @arg {boolean} root
+  */
+  set root(root) {
+    this.setAttribute('root', root ? '' : null);
+  };
+  /**
+   * @arg {boolean} active
+  */
+  set active(active) {
+    active ? this.activate() : this.deactivate();
   };
 
   /**
@@ -218,10 +383,43 @@ class BellPoint extends BellhopElement {
   };
 
   /**
+   * Adding new events.
+   * @arg {...this['_evens'][0]} evens
+  */
+  addEven(...evens) {
+    evens.filter(e => typeof e === 'object' &&  typeof e.act === 'function').forEach(e => this._evens.push(e));
+    return this;
+  };
+
+  /**
    * Endpoint activation.
   */
   activate() {
+    this.removeAttribute('prev');
     this.setAttribute('active', '');
+
+    for (let index = 0; index < this._evens.length; index++) {
+      
+      const even = this._evens[index];
+      
+      if (even.delt) {
+        this._evens.splice(index, 1);
+        continue;
+      } else if (typeof even.cond === 'function' && !even.cond(this)) {
+        continue;
+      };
+
+      even.act();
+
+      if (even.once) this._evens.splice(index, 1);
+    };
+
+    const evensInPoint = Array.from(this.children).filter(e => e instanceof BellEven);
+
+    for (const evenElem of evensInPoint) {
+      evenElem.act(this);
+    };
+    
     return this;
   };
   /**
@@ -229,6 +427,7 @@ class BellPoint extends BellhopElement {
   */
   deactivate() {
     this.removeAttribute('active');
+    this.setAttribute('prev', '');
     return this;
   };
 
@@ -277,6 +476,8 @@ class Bellhop extends BellhopElement {
     const style = document.createElement('style');
     document.head.append(style);
     style.innerHTML = `
+      ${BellEven._tag} { display: none; }
+
       ${BellPoint._tag} {
         &[active] {
           & > ${BellPoint._tag} {
@@ -412,6 +613,12 @@ class Bellhop extends BellhopElement {
   getActivePoint() {
     return this._getUniquePoint('active');
   };
+  /**
+   * Getting the prev endpoint.
+  */
+  getPrevPoint() {
+    return this._getUniquePoint('prev');
+  };
 
   _getUniquePoint(attr) {
     return this.querySelector(`${BellPoint._tag}[${attr}]:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag}[${attr}])`);
@@ -422,6 +629,7 @@ class Bellhop extends BellhopElement {
 // Define bellhop tag's.
 [
   Bellhop,
+  BellEven,
   BellPoint,
   BellButton,
 ].forEach(c => customElements.define(c._tag, c));
