@@ -3,14 +3,84 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>bell-hop</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body,
+      html {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        gap: 10px;
+        padding: 5px;
+        display: flex;
+        flex-flow: column;
+        align-items: center;
+        justify-content: center;
+        background-image: linear-gradient(45deg, #4000ff, #c782ff);
+      }
+      h1 {
+        color: #fff;
+        font-family: 'Courier New', Courier, monospace;
+      }
+      bell-button {
+        color: #fff;
+        width: 200px;
+        text-align: center;
+        padding: 5px;
+        border-radius: 3px;
+        background-color: #cc00ff;
+      }
+      bell-hop {
+        width: 300px !important;
+        height: 200px !important;
+        border-radius: 13px;
+        border: 5px solid #7b00b5;
+        background-color: #7f005599;
+      }
+      bell-point {
+        gap: 5px;
+      }
+      .begin {
+        animation: begin .75s forwards ease-in-out;
+      }
+      .exit {
+        animation: exit .75s forwards ease-in-out;
+      }
+      @keyframes begin {
+        0% {
+          opacity: 0;
+          transform: translateX(250px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0px);
+        }
+      }
+      @keyframes exit {
+        0% {
+          opacity: 1;
+          transform: translateX(0px);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(-250px);
+        }
+      }
+    </style>
   </head>
   <body>
-    <bell-hop>
+    <h1>bell-hop</h1>
+    <bell-hop ain="begin" aex="exit">
       <bell-point active root name="S">
         <bell-button step="A">S->A</bell-button>
         <bell-button step="B">S->B</bell-button>
-        <bell-button step="C">S->C</bell-button>
+        <bell-button step="C" aex="exit" ain="begin">S->C</bell-button>
         <bell-button to="D">S=>D</bell-button>
       </bell-point>
       <bell-point name="A">
@@ -21,12 +91,12 @@
           <bell-button step="A">D->A</bell-button>
         </bell-point>
       </bell-point>
-      <bell-point name="B">
+      <bell-point name="B" ain="begin" aex="exit">
         <bell-button step="S">B->S</bell-button>
         <bell-even act="alert(self)"></bell-even>
       </bell-point>
       <bell-point name="C">
-        <bell-button step="S">C->S</bell-button>
+        <bell-button step="S" ain="begin" aex="exit">C->S</bell-button>
       </bell-point>
     </bell-hop>
     <script src="index.js"></script>
