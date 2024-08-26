@@ -145,12 +145,14 @@ class BellButton extends BellhopElement {
   static _tag = 'bell-button';
 
   static get observedAttributes() {
-    return ['to', 'step'];
+    return ['to', 'step', 'ain', 'aex'];
   };
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case 'to':
+      case 'ain':
+      case 'aex':
       case 'step': this[`_${name}`] = newValue; break;
     };
   };
@@ -164,8 +166,17 @@ class BellButton extends BellhopElement {
    * @type {string?}
    * @protected
   */
+  _ain;
+  /**
+   * @type {string?}
+   * @protected
+  */
+  _aex;
+  /**
+   * @type {string?}
+   * @protected
+  */
   _step;
-
 
   constructor() {
     super();
@@ -183,8 +194,9 @@ class BellButton extends BellhopElement {
       };
 
       const point = this.getPoint();
+      const args = [this, this.ain, this.aex];
 
-      this.to ? point.to(this) : point.step(this);
+      this.to ? point.to(...args) : point.step(...args);
     });
 
   };
@@ -192,7 +204,12 @@ class BellButton extends BellhopElement {
   get to() {
     return this.getAttribute('to');
   };
-
+  get ain() {
+    return this._ain;
+  };
+  get aex() {
+    return this._aex;
+  };
   get step() {
     return this.getAttribute('step');
   };
@@ -206,9 +223,20 @@ class BellButton extends BellhopElement {
       throw new Error('The `to` parameter cannot be specified for bell-point, because it already has `step` installed.');
     };
 
-    return this._checkSetStrAttr('to', to);
+    this._checkSetStrAttr('to', to);
   };
-
+  /**
+   * @arg {any} ain
+  */
+  set ain(ain) {
+    this.setAttribute('ain', ain);
+  };
+  /**
+   * @arg {any} aex 
+  */
+  set aex(aex) {
+    this.setAttribute('aex', aex);
+  };
   /**
    * @arg {string} step
   */
@@ -218,7 +246,7 @@ class BellButton extends BellhopElement {
       throw new Error('The `step` parameter cannot be specified for bell-point, because it already has `to` installed.');
     };
 
-    return this._checkSetStrAttr('step', step);
+    this._checkSetStrAttr('step', step);
   };
 
   /**
@@ -245,11 +273,13 @@ class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
 
   static get observedAttributes() {
-    return ['name', 'prev', 'root', 'active'];
+    return ['name', 'prev', 'root', 'active', 'ain', 'aex'];
   };
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
+      case 'ain': this._ain = newValue; break;
+      case 'aex': this._aex = newValue; break;
       case 'name': this._name = newValue; break;
       case 'prev': this._prev = !!newValue; break;
       case 'root': this._root = !!newValue; break;
@@ -282,6 +312,12 @@ class BellPoint extends BellhopElement {
    * @protected
   */
   _evens = [];
+  /**
+   * Indicates transition state.
+   * @type {Promise}
+   * @protected
+  */
+  transit;
 
   constructor() {
     super();
@@ -294,6 +330,12 @@ class BellPoint extends BellhopElement {
     shadow.append(slot);
   };
 
+  get ain() {
+    return this.getAttribute('ain');
+  };
+  get aex() {
+    return this.getAttribute('aex');
+  };
   get name() {
     return this._name;
   };
@@ -307,6 +349,18 @@ class BellPoint extends BellhopElement {
     return this._active;
   };
 
+  /**
+   * @arg {any} ain
+  */
+  set ain(ain) {
+    this.setAttribute('ain', ain);
+  };
+  /**
+   * @arg {any} aex 
+  */
+  set aex(aex) {
+    this.setAttribute('aex', aex);
+  };
   /**
    * @arg {string} name
   */
@@ -333,50 +387,96 @@ class BellPoint extends BellhopElement {
   };
 
   /**
+   * @arg {BellPoint} point
+   * @arg {string?} ain
+   * @arg {string?} aex
+   * @protected
+  */
+  _transit(point, ain, aex) {
+
+    const bellhop = this.getBellhop();
+
+    ain = ain ? ain : point.ain ? point.ain : bellhop.ain ? bellhop.ain : null;
+    aex = aex ? aex : this.aex ? this.aex : bellhop.aex ? bellhop.aex : null;
+
+    if (ain) {
+      point.transit = new Promise(resolve => {
+        let listener = null;
+        point.setAttribute('transit', '');
+        point.classList.add(ain);
+        point.addEventListener('animationend', listener = () => {
+          point.classList.remove(ain);
+          point.removeEventListener('animationend', listener);
+          point.removeAttribute('transit');
+          resolve();
+        });
+      });
+    };
+
+    if (aex) {
+      this.transit = new Promise(resolve => {
+        let listener = null;
+        this.setAttribute('transit', '');
+        this.classList.add(aex);
+        this.addEventListener('animationend', listener = () => {
+          this.classList.remove(aex);
+          this.removeEventListener('animationend', listener);
+          this.removeAttribute('transit');
+          resolve();
+        });
+      });
+    };
+
+    this.getBellhop().activatePoint(point);
+    return this;
+  };
+  /**
    * Jump to the specified end point if possible.
    * @arg {BellButton|BellPoint|string} to
+   * @arg {string?} ain
+   * @arg {string?} aex
   */
-  to(to) {
+  to(to, ain, aex) {
 
     const bellhop = this.getBellhop();
 
     if (to instanceof BellButton) to = to.getAttribute('to');
     if (typeof to === 'string') to = bellhop.getPoint(to);
 
-    this.getBellhop().activatePoint(to);
+    this._transit(to, ain, aex);
 
     return this;
   };
-
   /**
    * Take a step to the specified end point, if possible.
    * @arg {BellButton|BellPoint|string} step
+   * @arg {string?} ain
+   * @arg {string?} aex
   */
-  step(step) {
+  step(step, ain, aex) {
 
-    const bellhop = this.getBellhop();
     const parentPoint = this.parentElement;
 
     if (step instanceof BellButton) step = step.getAttribute('step');
-    if (typeof step === 'string') step = bellhop.getPoint(step);
+    if (typeof step === 'string') step = this.getBellhop().getPoint(step);
 
     if (parentPoint instanceof BellPoint && parentPoint === step) {
-      bellhop.activatePoint(parentPoint);
+      this._transit(parentPoint, ain, aex);
       return this;
     };
 
     /** @type {BellPoint?} */
-    const neighbourPoint = Array.from(this.parentElement.children).find(point => point=== step);
+    const neighbourPoint = Array.from(parentPoint.children).find(point => point=== step);
 
     if (neighbourPoint) {
-      bellhop.activatePoint(neighbourPoint);
+      this._transit(neighbourPoint, ain, aex);
       return this;
     };
 
     const innerPoint = Array.from(this.children).find(point => point instanceof BellPoint && point === step);
 
     if (innerPoint) {
-      bellhop.activatePoint(innerPoint);
+      this._transit(innerPoint, ain, aex);
     };
 
     return this;
@@ -470,6 +570,10 @@ class BellPoint extends BellhopElement {
 class Bellhop extends BellhopElement {
   static _tag = 'bell-hop';
   
+  static get observedAttributes() {
+    return ['ain', 'aex'];
+  };
+
   static {
 
     // Creating a stylistic library block.
@@ -479,18 +583,30 @@ class Bellhop extends BellhopElement {
       ${BellEven._tag} { display: none; }
 
       ${BellPoint._tag} {
-        &[active] {
-          & > ${BellPoint._tag} {
-            display: none;
-          }
+        & {
+          top: 0;
+          left: 0;
+          position: absolute;
         }
-        &:not([active], :has([active])) {
+        &[transit] {
+          z-index: 2;
+        }
+        &[active][transit] {
+          z-index: 1;
+        }
+        &:not([active], [transit], :has([active], [transit])) {
           display: none;
         }
         &:not([active]):has([active]) {
           & > :not(${BellPoint._tag}) {
             display: none;
           }
+        }
+      }
+
+      ${Bellhop._tag} {
+        & {
+          position: relative;
         }
       }
 
@@ -508,6 +624,13 @@ class Bellhop extends BellhopElement {
     `;
   };
 
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case 'ain': this._ain = newValue; break;
+      case 'aex': this._aex = newValue; break;
+    };
+  };
+
   constructor() {
     super();
 
@@ -517,6 +640,26 @@ class Bellhop extends BellhopElement {
 
     const slot = document.createElement('slot');
     shadow.append(slot);
+  };
+
+  get ain() {
+    return this.getAttribute('ain');
+  };
+  get aex() {
+    return this.getAttribute('aex');
+  };
+
+  /**
+   * @arg {any} ain
+  */
+  set ain(ain) {
+    this.setAttribute('ain', ain);
+  };
+  /**
+   * @arg {any} aex 
+  */
+  set aex(aex) {
+    this.setAttribute('aex', aex);
   };
 
   /**
