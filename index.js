@@ -603,6 +603,11 @@ class Bellhop extends BellhopElement {
         &[active][transit] {
           z-index: 1;
         }
+        &:has([active], [transit]) {
+          & > ${BellWrapper._tag} {
+            display: none;
+          }
+        }
         &:not([active], [transit], :has([active], [transit])) {
           display: none;
         }
