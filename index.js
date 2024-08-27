@@ -40,6 +40,15 @@ class BellhopElement extends HTMLElement {
 
 };
 
+class BellWrapper extends BellhopElement {
+  
+  static _tag = 'bell-wrapper';
+  
+  constructor() {
+    super();
+  };
+};
+
 class BellEven extends BellhopElement {
   
   static _tag = 'bell-even';
@@ -254,7 +263,7 @@ class BellButton extends BellhopElement {
    * @returns {BellPoint}
   */
   getPoint() {
-    return this.parentElement;
+    return this.closest('bell-point');
   };
   /**
    * @returns {Bellhop}
@@ -328,6 +337,17 @@ class BellPoint extends BellhopElement {
 
     const slot = document.createElement('slot');
     shadow.append(slot);
+
+    this.wrapper = document.createElement('bell-wrapper');
+    this.append(this.wrapper);
+  };
+
+  connectedCallback() {
+    const elems = Array.from(this.children).filter(e => !['bell-wrapper', 'bell-point'].includes(e.tagName.toLowerCase())).reverse();
+    while(elems.length) {
+      const elem = elems.pop();
+      this.wrapper.append(elem);
+    };
   };
 
   get ain() {
@@ -399,33 +419,20 @@ class BellPoint extends BellhopElement {
     ain = ain ? ain : point.ain ? point.ain : bellhop.ain ? bellhop.ain : null;
     aex = aex ? aex : this.aex ? this.aex : bellhop.aex ? bellhop.aex : null;
 
-    if (ain) {
-      point.transit = new Promise(resolve => {
+    [ain ? [point, ain] : null, aex ? [this, aex] : null].filter(e => e).forEach(entry => {
+      const [p, a] = entry;
+      p.transit = new Promise(resolve => {
         let listener = null;
-        point.setAttribute('transit', '');
-        point.classList.add(ain);
-        point.addEventListener('animationend', listener = () => {
-          point.classList.remove(ain);
-          point.removeEventListener('animationend', listener);
-          point.removeAttribute('transit');
+        p.setAttribute('transit', '');
+        p.wrapper.classList.add(a);
+        p.wrapper.addEventListener('animationend', listener = () => {
+          p.wrapper.classList.remove(a);
+          p.wrapper.removeEventListener('animationend', listener);
+          p.removeAttribute('transit');
           resolve();
         });
       });
-    };
-
-    if (aex) {
-      this.transit = new Promise(resolve => {
-        let listener = null;
-        this.setAttribute('transit', '');
-        this.classList.add(aex);
-        this.addEventListener('animationend', listener = () => {
-          this.classList.remove(aex);
-          this.removeEventListener('animationend', listener);
-          this.removeAttribute('transit');
-          resolve();
-        });
-      });
-    };
+    });
 
     this.getBellhop().activatePoint(point);
     return this;
@@ -526,6 +533,8 @@ class BellPoint extends BellhopElement {
    * Endpoint deactivation.
   */
   deactivate() {
+    const prevPoint = this.getBellhop().getPrevPoint();
+    if (prevPoint) prevPoint.removeAttribute('prev');
     this.removeAttribute('active');
     this.setAttribute('prev', '');
     return this;
@@ -611,8 +620,10 @@ class Bellhop extends BellhopElement {
       }
 
       ${Bellhop._tag},
-      ${Bellhop._tag} ${BellPoint._tag} {
+      ${Bellhop._tag} ${BellPoint._tag},
+      ${Bellhop._tag} ${BellWrapper._tag} {
         & {
+          gap: 5px;
           width: 100%;
           height: 100%;
           display: flex;
@@ -775,6 +786,7 @@ class Bellhop extends BellhopElement {
   BellEven,
   BellPoint,
   BellButton,
+  BellWrapper,
 ].forEach(c => customElements.define(c._tag, c));
 
 /**

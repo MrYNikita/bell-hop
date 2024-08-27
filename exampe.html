@@ -47,10 +47,10 @@
         gap: 5px;
       }
       .begin {
-        animation: begin .75s forwards ease-in-out;
+        animation: begin 10s forwards ease-in-out;
       }
       .exit {
-        animation: exit .75s forwards ease-in-out;
+        animation: exit 10s forwards ease-in-out;
       }
       @keyframes begin {
         0% {
@@ -80,7 +80,7 @@
       <bell-point active root name="S">
         <bell-button step="A">S->A</bell-button>
         <bell-button step="B">S->B</bell-button>
-        <bell-button step="C" aex="exit" ain="begin">S->C</bell-button>
+        <bell-button step="C">S->C</bell-button>
         <bell-button to="D">S=>D</bell-button>
       </bell-point>
       <bell-point name="A">
@@ -91,12 +91,12 @@
           <bell-button step="A">D->A</bell-button>
         </bell-point>
       </bell-point>
-      <bell-point name="B" ain="begin" aex="exit">
+      <bell-point name="B">
         <bell-button step="S">B->S</bell-button>
         <bell-even act="alert(self)"></bell-even>
       </bell-point>
       <bell-point name="C">
-        <bell-button step="S" ain="begin" aex="exit">C->S</bell-button>
+        <bell-button step="S">C->S</bell-button>
       </bell-point>
     </bell-hop>
     <script src="index.js"></script>
