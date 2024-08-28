@@ -170,22 +170,12 @@ class BellButton extends BellhopElement {
    * @type {string?}
    * @protected
   */
-  _to;
-  /**
-   * @type {string?}
-   * @protected
-  */
   _ain;
   /**
    * @type {string?}
    * @protected
   */
   _aex;
-  /**
-   * @type {string?}
-   * @protected
-  */
-  _step;
 
   constructor() {
     super();
@@ -588,55 +578,58 @@ class Bellhop extends BellhopElement {
     // Creating a stylistic library block.
     const style = document.createElement('style');
     document.head.append(style);
-    style.innerHTML = `
-      ${BellEven._tag} { display: none; }
 
-      ${BellPoint._tag} {
+    style.innerHTML = `
+
+    ${Bellhop._tag},
+    ${BellPoint._tag},
+    ${BellWrapper._tag} {
+      gap: 5px;
+      display: flex;
+      flex-flow: column;  
+      align-items: center;
+      justify-content: center;
+    }
+
+    ${BellPoint._tag},
+    ${BellWrapper._tag} {
+      width: 100%;
+      height: 100%;
+    }
+
+    ${Bellhop._tag} {
+      position: relative;
+    }
+
+    ${BellPoint._tag} {
+      & {
+        position: absolute;
+      }
+      &[transit] {
+        pointer-events: none;
+      }
+      &:not(
+        [active],
+        [transit],
+        :has(
+          ${BellPoint._tag}[active],
+          ${BellPoint._tag}[transit]
+        )
+      ) {
         & {
-          top: 0;
-          left: 0;
-          position: absolute;
-        }
-        &[transit] {
-          z-index: 2;
-        }
-        &[active][transit] {
-          z-index: 1;
-        }
-        &:has([active], [transit]) {
-          & > ${BellWrapper._tag} {
-            display: none;
-          }
-        }
-        &:not([active], [transit], :has([active], [transit])) {
           display: none;
         }
-        &:not([active]):has([active]) {
-          & > :not(${BellPoint._tag}) {
-            display: none;
-          }
+      }
+      &:not([transit]):has(
+        ${BellPoint._tag}[active],
+        ${BellPoint._tag}[transit]
+      ) {
+        & > ${BellWrapper._tag} {
+          display: none;
         }
       }
+    }
 
-      ${Bellhop._tag} {
-        & {
-          position: relative;
-        }
-      }
-
-      ${Bellhop._tag},
-      ${Bellhop._tag} ${BellPoint._tag},
-      ${Bellhop._tag} ${BellWrapper._tag} {
-        & {
-          gap: 5px;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          flex-flow: column;
-          align-items: center;
-          justify-content: center;
-        }
-      }
     `;
   };
 
