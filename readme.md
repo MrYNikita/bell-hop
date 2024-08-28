@@ -1,4 +1,4 @@
-<div style="background-image: linear-gradient(45deg, red, blue)"><h1 align=center style="padding-top: 12px">bell-hop</h1></div>
+<div style="background-image: linear-gradient(45deg, red, blue); border-radius: 3px;"><h1 align=center style="padding-top: 12px">bell-hop</h1></div>
 
 Проект разработан в августе 2024 года специально для проекта Mafia, Яхиным Никитой Артемовичем.
 
