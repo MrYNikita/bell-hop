@@ -347,7 +347,7 @@ class BellPoint extends BellhopElement {
     return this.getAttribute('aex');
   };
   get name() {
-    return this._name;
+    return this._name ?? this.classList[0];
   };
   get root() {
     return this._root;
@@ -742,7 +742,7 @@ class Bellhop extends BellhopElement {
    * @returns {BellPoint}
   */
   getPoint(name) {
-    return this._getUniquePoint(`name=${name}`);
+    return this._getUniquePoint(`name=${name}`) ?? this._getUniquePointByCls(name);
   };
   /**
    * Get all possible end points.
@@ -774,6 +774,9 @@ class Bellhop extends BellhopElement {
 
   _getUniquePoint(attr) {
     return this.querySelector(`${BellPoint._tag}[${attr}]:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag}[${attr}])`);
+  };
+  _getUniquePointByCls(cls) {
+    return this.querySelector(`${BellPoint._tag}.${cls}:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag}.${cls})`);
   };
 
 };
