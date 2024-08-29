@@ -6,6 +6,7 @@
     <title>bell-hop</title>
     <style>
       * {
+        color: #fff;
         margin: 0;
         padding: 0;
         box-sizing: border-box;
@@ -25,11 +26,9 @@
         background-image: linear-gradient(45deg, #4000ff, #c782ff);
       }
       h1 {
-        color: #fff;
         font-family: 'Courier New', Courier, monospace;
       }
       bell-button {
-        color: #fff;
         width: 200px;
         text-align: center;
         padding: 5px;
@@ -38,8 +37,8 @@
       }
       bell-hop {
         overflow: hidden;
-        width: 300px !important;
-        height: 200px !important;
+        width: 400px !important;
+        height: 270px !important;
         border-radius: 13px;
         border: 5px solid #7b00b5;
         background-color: #7f005599;
@@ -84,6 +83,7 @@
         <bell-button step="C">S->C</bell-button>
         <bell-button to="D">S=>D</bell-button>
         <bell-button step="E">S->E</bell-button>
+        <bell-button step="G">S->G</bell-button>
       </bell-point>
       <bell-point name="A">
         <bell-button step="S">A->S</bell-button>
@@ -102,6 +102,9 @@
       </bell-point>
       <bell-point class="E">
         <bell-button step="S">E->S</bell-button>
+      </bell-point>
+      <bell-point class="G" time="1000" to="S">
+        <p>After one second...</p>
       </bell-point>
     </bell-hop>
     <script src="index.js"></script>

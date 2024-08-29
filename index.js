@@ -272,7 +272,7 @@ class BellPoint extends BellhopElement {
   static _tag = 'bell-point';
 
   static get observedAttributes() {
-    return ['name', 'prev', 'root', 'active', 'ain', 'aex'];
+    return ['name', 'prev', 'root', 'active', 'ain', 'aex', 'to', 'time'];
   };
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -340,11 +340,17 @@ class BellPoint extends BellhopElement {
     };
   };
 
+  get to() {
+    return this.getAttribute('to');
+  };
   get ain() {
     return this.getAttribute('ain');
   };
   get aex() {
     return this.getAttribute('aex');
+  };
+  get time() {
+    return this.getAttribute('time');
   };
   get name() {
     return this._name ?? this.classList[0];
@@ -360,6 +366,12 @@ class BellPoint extends BellhopElement {
   };
 
   /**
+   * @arg {any} to
+  */
+  set to(to) {
+    this.setAttribute('to', to);
+  };
+  /**
    * @arg {any} ain
   */
   set ain(ain) {
@@ -370,6 +382,12 @@ class BellPoint extends BellhopElement {
   */
   set aex(aex) {
     this.setAttribute('aex', aex);
+  };
+  /**
+   * @arg {any} time 
+  */
+  set time(time) {
+    this.setAttribute('time', time);
   };
   /**
    * @arg {string} name
@@ -420,11 +438,11 @@ class BellPoint extends BellhopElement {
           p.wrapper.removeEventListener('animationend', listener);
           p.removeAttribute('transit');
           resolve();
+          this.getBellhop().activatePoint(point);
         });
       });
     });
 
-    this.getBellhop().activatePoint(point);
     return this;
   };
   /**
@@ -515,6 +533,13 @@ class BellPoint extends BellhopElement {
 
     for (const evenElem of evensInPoint) {
       evenElem.act(this);
+    };
+
+    const to = this.getAttribute('to');
+    const bellhop = this.getBellhop();
+
+    if (this.time && to) {
+      setTimeout(() => this.to(bellhop.getPoint(to)), this.time -= 0);
     };
     
     return this;
