@@ -192,6 +192,8 @@ class BellButton extends BellhopElement {
         throw new Error('Invalid configuration for to and step parameters specified.');
       };
 
+      console.log(this.getBellhop());
+
       const point = this.getPoint();
       const args = [this, this.ain, this.aex];
 
@@ -645,7 +647,7 @@ class Bellhop extends BellhopElement {
           display: none;
         }
       }
-      &:not([transit]):has(
+      &:not([active], [transit]):has(
         ${BellPoint._tag}[active],
         ${BellPoint._tag}[transit]
       ) {
@@ -653,6 +655,13 @@ class Bellhop extends BellhopElement {
           display: none;
         }
       }
+    }
+
+    ${Bellhop._tag} ${BellPoint._tag}:not([active], [transit]):has(
+      ${Bellhop._tag} ${BellPoint._tag}[active],
+      ${Bellhop._tag} ${BellPoint._tag}[transit]
+    ) {
+      display: none;
     }
 
     `;
