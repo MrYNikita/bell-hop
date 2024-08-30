@@ -154,7 +154,7 @@ class BellButton extends BellhopElement {
   static _tag = 'bell-button';
 
   static get observedAttributes() {
-    return ['to', 'step', 'ain', 'aex'];
+    return ['goto', 'step', 'ain', 'aex', 'bind'];
   };
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -188,16 +188,14 @@ class BellButton extends BellhopElement {
     shadow.append(slot);
 
     this.addEventListener('click', e => {
-      if (this.step && this.to) {
+      if (this.step && this.goto) {
         throw new Error('Invalid configuration for to and step parameters specified.');
       };
-
-      console.log(this.getBellhop());
 
       const point = this.getPoint();
       const args = [this, this.ain, this.aex];
 
-      this.to ? point.to(...args) : point.step(...args);
+      this.goto ? point.goto(...args, this.bind) : point.step(...args);
     });
 
   };
@@ -214,17 +212,23 @@ class BellButton extends BellhopElement {
   get step() {
     return this.getAttribute('step');
   };
+  get bind() {
+    return this.getAttribute('bind');
+  };
+  get goto() {
+    return this.getAttribute('goto');
+  };
 
   /**
-   * @arg {string} to
+   * @arg {any} goto
   */
-  set to(to) {
+  set goto(goto) {
 
     if (this.getAttribute('step')) {
-      throw new Error('The `to` parameter cannot be specified for bell-point, because it already has `step` installed.');
+      throw new Error('The `goto` parameter cannot be specified for bell-point, because it already has `step` installed.');
     };
 
-    this._checkSetStrAttr('to', to);
+    this._checkSetStrAttr('goto', goto);
   };
   /**
    * @arg {any} ain
@@ -248,6 +252,12 @@ class BellButton extends BellhopElement {
     };
 
     this._checkSetStrAttr('step', step);
+  };
+  /**
+   * @arg {any} bind
+  */
+  set bind(bind) {
+    this.setAttribute('bind', bind);
   };
 
   /**
@@ -422,15 +432,36 @@ class BellPoint extends BellhopElement {
    * @arg {string?} aex
    * @protected
   */
-  _transit(point, ain, aex) {
+  _transit(point, ain, aex, bind) {
 
     const bellhop = this.getBellhop();
+    const bellhopBind = this.getBellhop(bind);
+    const isDeep = bellhop !== bellhopBind && bellhop.contains(bellhopBind);
+    const endpoint = isDeep ? point : null;
 
-    ain = ain ? ain : point.ain ? point.ain : bellhop.ain ? bellhop.ain : null;
-    aex = aex ? aex : this.aex ? this.aex : bellhop.aex ? bellhop.aex : null;
+    ain = ain ? ain : point.ain ? point.ain : isDeep ? bellhop?.ain : bellhopBind?.ain ?? null;
+    aex = aex ? aex : this.aex ? this.aex : isDeep ? bellhop?.aex : bellhopBind?.aex ?? null;
 
-    [ain ? [point, ain] : null, aex ? [this, aex] : null].filter(e => e).forEach(entry => {
+    if (isDeep) {
+      bellhopBind.activatePoint(point);
+      const pointLast = this.getRootBellhop().getPoints().find(p => p.contains(bellhopBind));
+      
+      /** @type {BellPoint} */
+      let pointNow = bellhopBind.closest(BellPoint._tag);
+
+      while (pointLast !== pointNow) {
+        const bellhop = pointNow.getBellhop();
+        bellhop.activatePoint(pointNow);
+        pointNow = bellhop.closest(BellPoint._tag);
+      };
+      
+      point = pointNow;
+      this.deactivate();
+    };
+
+    if (ain || aex) [ain ? [point, ain] : null, aex ? [bind && !isDeep ? this.getBellhop().closest(BellPoint._tag) : this, aex] : null].filter(e => e).forEach(entry => {
       const [p, a] = entry;
+
       p.transit = new Promise(resolve => {
         let listener = null;
         p.setAttribute('transit', '');
@@ -440,10 +471,15 @@ class BellPoint extends BellhopElement {
           p.wrapper.removeEventListener('animationend', listener);
           p.removeAttribute('transit');
           resolve();
-          this.getBellhop().activatePoint(point);
+          bellhopBind.activatePoint(point);
+          (isDeep && endpoint.activate());
         });
       });
     });
+    else {
+      bellhopBind.activatePoint(point);
+      (isDeep && endpoint.activate());
+    };
 
     return this;
   };
@@ -453,14 +489,14 @@ class BellPoint extends BellhopElement {
    * @arg {string?} ain
    * @arg {string?} aex
   */
-  to(to, ain, aex) {
+  goto(to, ain, aex, bind) {
 
-    const bellhop = this.getBellhop();
+    const bellhop = this.getBellhop(bind);
 
-    if (to instanceof BellButton) to = to.getAttribute('to');
+    if (to instanceof BellButton) to = to.getAttribute('goto');
     if (typeof to === 'string') to = bellhop.getPoint(to);
 
-    this._transit(to, ain, aex);
+    this._transit(to, ain, aex, bind);
 
     return this;
   };
@@ -483,7 +519,7 @@ class BellPoint extends BellhopElement {
     };
 
     /** @type {BellPoint?} */
-    const neighbourPoint = Array.from(parentPoint.children).find(point => point=== step);
+    const neighbourPoint = Array.from(parentPoint.children).find(point => point === step);
 
     if (neighbourPoint) {
       this._transit(neighbourPoint, ain, aex);
@@ -541,7 +577,7 @@ class BellPoint extends BellhopElement {
     const bellhop = this.getBellhop();
 
     if (this.time && to) {
-      setTimeout(() => this.to(bellhop.getPoint(to)), this.time -= 0);
+      setTimeout(() => this.goto(bellhop.getPoint(to)), this.time -= 0);
     };
     
     return this;
@@ -559,10 +595,29 @@ class BellPoint extends BellhopElement {
 
   /**
    * Getting a bellhop.
+   * @arg {string?} bind
    * @returns {Bellhop}
   */
-  getBellhop() {
+  getBellhop(bind = '') {
+
+    if (bind) {
+      const bellhop = this.getRootBellhop();
+
+      if (bellhop.name === bind) return bellhop;
+      
+      const bellhopBind = bellhop.querySelector(`${Bellhop._tag}.${bind}`) ?? bellhop.querySelector(`${Bellhop._tag}[name=${bind}]`);
+    
+      if (bellhopBind) return bellhopBind;
+    };
+
     return this.closest(Bellhop._tag);
+  };
+  /**
+   * Getting a root bellhop.
+   * @returns {Bellhop?}
+  */
+  getRootBellhop() {
+    return this.closest(`${Bellhop._tag}:not(${Bellhop._tag} ${Bellhop._tag})`);
   };
   /**
    * Get all next endpoints.
@@ -597,7 +652,7 @@ class Bellhop extends BellhopElement {
   static _tag = 'bell-hop';
   
   static get observedAttributes() {
-    return ['ain', 'aex'];
+    return ['ain', 'aex', 'name'];
   };
 
   static {
@@ -691,6 +746,9 @@ class Bellhop extends BellhopElement {
   get aex() {
     return this.getAttribute('aex');
   };
+  get name() {
+    return this.getAttribute('name') ?? this.classList[0] ?? null;
+  };
 
   /**
    * @arg {any} ain
@@ -703,6 +761,12 @@ class Bellhop extends BellhopElement {
   */
   set aex(aex) {
     this.setAttribute('aex', aex);
+  };
+  /**
+   * @arg name
+  */
+  set name(name) {
+    this.setAttribute('name', name);
   };
 
   /**
@@ -783,7 +847,7 @@ class Bellhop extends BellhopElement {
    * @returns {BellPoint[]}
   */
   getPoints() {
-    return Array.from(this.querySelectorAll(`${BellPoint._tag}:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag})`));
+    return Array.from(this.querySelectorAll(this._getSelector()));
   };
   /**
    * Getting the root endpoint.
@@ -806,11 +870,26 @@ class Bellhop extends BellhopElement {
     return this._getUniquePoint('prev');
   };
 
-  _getUniquePoint(attr) {
-    return this.querySelector(`${BellPoint._tag}[${attr}]:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag}[${attr}])`);
+  /**
+   * @protected
+   * @arg {string} insert
+  */
+  _getSelector(insert = '') {
+    const selector = `${Bellhop._tag}${this.getAttribute('name') ? `[name=${this.name}]` : this.classList[0] ? `.${this.classList[0]}` : ''}`;
+  
+    return `${selector} ${BellPoint._tag}${insert}:not(${selector} ${Bellhop._tag} ${BellPoint._tag})`;
   };
+  /**
+   * @protected
+  */
+  _getUniquePoint(attr) {
+    return this.querySelector(this._getSelector(`[${attr}]`));
+  };
+  /**
+   * @protected
+  */
   _getUniquePointByCls(cls) {
-    return this.querySelector(`${BellPoint._tag}.${cls}:not(${Bellhop._tag} ${Bellhop._tag} ${BellPoint._tag}.${cls})`);
+    return this.querySelector(this._getSelector(`.${cls}`));
   };
 
 };
