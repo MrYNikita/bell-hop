@@ -157,26 +157,6 @@ class BellButton extends BellhopElement {
     return ['goto', 'step', 'ain', 'aex', 'bind'];
   };
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case 'to':
-      case 'ain':
-      case 'aex':
-      case 'step': this[`_${name}`] = newValue; break;
-    };
-  };
-
-  /**
-   * @type {string?}
-   * @protected
-  */
-  _ain;
-  /**
-   * @type {string?}
-   * @protected
-  */
-  _aex;
-
   constructor() {
     super();
 
@@ -204,10 +184,10 @@ class BellButton extends BellhopElement {
     return this.getAttribute('to');
   };
   get ain() {
-    return this._ain;
+    return this.getAttribute('ain');
   };
   get aex() {
-    return this._aex;
+    return this.getAttribute('aex');
   };
   get step() {
     return this.getAttribute('step');
@@ -286,38 +266,7 @@ class BellPoint extends BellhopElement {
   static get observedAttributes() {
     return ['name', 'prev', 'root', 'active', 'ain', 'aex', 'to', 'time'];
   };
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case 'ain': this._ain = newValue; break;
-      case 'aex': this._aex = newValue; break;
-      case 'name': this._name = newValue; break;
-      case 'prev': this._prev = !!newValue; break;
-      case 'root': this._root = !!newValue; break;
-      case 'active': this._active = !!newValue; break;
-    };
-  };
   
-  /**
-   * @type {string}
-   * @protected
-  */
-  _name;
-  /**
-   * @type {boolean}
-   * @protected
-  */  
-  _prev;
-  /**
-   * @type {boolean}
-   * @protected
-  */
-  _root;
-  /**
-   * @type {boolean}
-   * @protected
-  */
-  _active;
   /**
    * @type {import("./type").TBellEven[]}
    * @protected
@@ -365,16 +314,16 @@ class BellPoint extends BellhopElement {
     return this.getAttribute('time');
   };
   get name() {
-    return this._name ?? this.classList[0];
+    return this.getAttribute('name') ?? this.classList[0];
   };
   get root() {
-    return this._root;
+    return this.hasAttribute('root');
   };
   get prev() {
-    return this._prev;
+    return this.hasAttribute('prev');
   };
   get active() {
-    return this._active;
+    return this.hasAttribute('active');
   };
 
   /**
@@ -720,13 +669,6 @@ class Bellhop extends BellhopElement {
     }
 
     `;
-  };
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case 'ain': this._ain = newValue; break;
-      case 'aex': this._aex = newValue; break;
-    };
   };
 
   constructor() {
