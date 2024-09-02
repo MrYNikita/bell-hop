@@ -40,13 +40,79 @@ class BellhopElement extends HTMLElement {
 
 };
 
-class BellWrapper extends BellhopElement {
+class BellPod extends BellhopElement {
   
-  static _tag = 'bell-wrapper';
+  static _tag = 'bell-pod';
   
+  static get observedAttributes() {
+    return ['name', 'points'];
+  };
+
+  /**
+   * @type {HTMLElement}
+  */
+  elem;
+  /**
+   * @type {HTMLElement?}
+   * @protected
+  */
+  _clone;
+
   constructor() {
     super();
   };
+
+  connectedCallback() {
+    if (this.children[1]) throw new Error('More than 1 element specified for Bell-pod element.');
+    if (this.parentElement.tagName.toLowerCase() !== BellWrapper._tag) return;
+    this.elem = this.children[0];
+    this.parentElement.append(this.elem);
+  };
+
+  get name() {
+    return this.getAttribute('name');
+  };
+  /**
+   * @returns {string}
+  */
+  get points() {
+    return this.getAttribute('points').split(' ');
+  };
+
+  /**
+   * @arg {string?} name
+  */
+  set name(name) {
+    if (!name) {
+      this.removeAttribute('name');
+      return;
+    } else if (typeof name === 'string') {
+      this.setAttribute('name', name);
+      return;
+    };
+
+    throw new TypeError('The name specified for bell-pod are of an invalid type.');
+
+  };
+  /**
+   * @arg {(string|string[])?} points
+  */
+  set points(points) {
+    if (!points) {
+      this.removeAttribute('points');
+      return;
+    } else if (points instanceof Array) {
+      this.setAttribute('points', points.join(' '));
+      return;
+    } else if (typeof points === 'string') {
+      this.setAttribute('points', points);
+      return;
+    };
+
+    throw new TypeError('The endpoints specified for bell-pod are of an invalid type.');
+
+  };
+
 };
 
 class BellEven extends BellhopElement {
@@ -56,22 +122,7 @@ class BellEven extends BellhopElement {
   static get observedAttributes() {
     return ['cond', 'act', 'once', 'delt', 'name'];
   };
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case 'act': this._act = newValue; break;
-      case 'name': this._name = newValue; break;
-      case 'cond': this._cond = newValue; break;
-      case 'once': this._once = !!newValue; break;
-      case 'delt': this._delt = !!newValue; break;
-    };
-  };
   
-  /**
-   * @type {import("./type").TBellEven['name']}
-   * @protected
-  */
-  _name;
   /**
    * @type {import("./type").TBellEven['act']}
    * @protected
@@ -82,16 +133,6 @@ class BellEven extends BellhopElement {
    * @protected
   */
   _cond;
-  /**
-   * @type {import("./type").TBellEven['once']}
-   * @protected
-  */
-  _once;
-  /**
-   * @type {import("./type").TBellEven['delt']}
-   * @protected
-  */
-  _delt;
 
   constructor() {
     super();
@@ -104,13 +145,13 @@ class BellEven extends BellhopElement {
     return new Function('self', this._cond);
   };
   get delt() {
-    return this._delt;
+    return this.getAttribute('delt');
   };
   get once() {
-    return this._once;
+    return this.getAttribute('once');
   };
   get name() {
-    return this._name;
+    return this.getAttribute('name');
   };
 
   /**
@@ -142,6 +183,15 @@ class BellEven extends BellhopElement {
   */
   set delt(isDelt) {
     this._delt = !!isDelt;
+  };
+};
+
+class BellWrapper extends BellhopElement {
+  
+  static _tag = 'bell-wrapper';
+  
+  constructor() {
+    super();
   };
 };
 
@@ -261,6 +311,7 @@ class BellButton extends BellhopElement {
  * @class
 */
 class BellPoint extends BellhopElement {
+  
   static _tag = 'bell-point';
 
   static get observedAttributes() {
@@ -406,6 +457,16 @@ class BellPoint extends BellhopElement {
       
       point = pointNow;
       this.deactivate();
+    };
+
+    // Transfer Pod's
+
+    const transferPoint = endpoint ?? point;
+
+    for (const pod of transferPoint.getRootBellhop().querySelectorAll(`bell-pod[points~=${transferPoint.name}]`)) {
+      transferPoint.getWrapper().append(pod.elem);
+      pod?._clone?.remove?.();
+      if (pod.points.includes(this.name)) this.getWrapper().append(pod._clone = pod.elem.cloneNode(true));
     };
 
     if (ain || aex) [ain ? [point, ain] : null, aex ? [bind && !isDeep ? this.getBellhop().closest(BellPoint._tag) : this, aex] : null].filter(e => e).forEach(entry => {
@@ -562,6 +623,12 @@ class BellPoint extends BellhopElement {
     return this.closest(Bellhop._tag);
   };
   /**
+   * @returns {BellWrapper}
+  */
+  getWrapper() {
+    return Array.from(this.children).find(c => c instanceof BellWrapper);
+  };
+  /**
    * Getting a root bellhop.
    * @returns {Bellhop?}
   */
@@ -611,6 +678,10 @@ class Bellhop extends BellhopElement {
     document.head.append(style);
 
     style.innerHTML = `
+
+    ${BellPod._tag} {
+      display: none;
+    }
 
     ${Bellhop._tag},
     ${BellPoint._tag},
@@ -839,6 +910,7 @@ class Bellhop extends BellhopElement {
 // Define bellhop tag's.
 [
   Bellhop,
+  BellPod,
   BellEven,
   BellPoint,
   BellButton,
