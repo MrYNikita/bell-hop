@@ -49,9 +49,14 @@ class BellPod extends BellhopElement {
   };
 
   /**
-   * @arg {HTMLElement}
+   * @type {HTMLElement}
   */
   elem;
+  /**
+   * @type {HTMLElement?}
+   * @protected
+  */
+  _clone;
 
   constructor() {
     super();
@@ -59,7 +64,9 @@ class BellPod extends BellhopElement {
 
   connectedCallback() {
     if (this.children[1]) throw new Error('More than 1 element specified for Bell-pod element.');
+    if (this.parentElement.tagName.toLowerCase() !== BellWrapper._tag) return;
     this.elem = this.children[0];
+    this.parentElement.append(this.elem);
   };
 
   get name() {
@@ -419,11 +426,6 @@ class BellPoint extends BellhopElement {
     active ? this.activate() : this.deactivate();
   };
 
-  _transfer() {
-    for (const pod of this.getRootBellhop().querySelectorAll(`bell-pod[points~=${this.name}]`)) {
-      this.getWrapper().append(pod.elem);
-    };
-  };
   /**
    * @arg {BellPoint} point
    * @arg {string?} ain
@@ -457,7 +459,15 @@ class BellPoint extends BellhopElement {
       this.deactivate();
     };
 
-    (endpoint ? endpoint : point)._transfer();
+    // Transfer Pod's
+
+    const transferPoint = endpoint ?? point;
+
+    for (const pod of transferPoint.getRootBellhop().querySelectorAll(`bell-pod[points~=${transferPoint.name}]`)) {
+      transferPoint.getWrapper().append(pod.elem);
+      pod?._clone?.remove?.();
+      if (pod.points.includes(this.name)) this.getWrapper().append(pod._clone = pod.elem.cloneNode(true));
+    };
 
     if (ain || aex) [ain ? [point, ain] : null, aex ? [bind && !isDeep ? this.getBellhop().closest(BellPoint._tag) : this, aex] : null].filter(e => e).forEach(entry => {
       const [p, a] = entry;
@@ -668,6 +678,10 @@ class Bellhop extends BellhopElement {
     document.head.append(style);
 
     style.innerHTML = `
+
+    ${BellPod._tag} {
+      display: none;
+    }
 
     ${Bellhop._tag},
     ${BellPoint._tag},
