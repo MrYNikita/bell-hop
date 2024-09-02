@@ -103,6 +103,9 @@
         <bell-button step="G">S->G</bell-button>
         <bell-button step="I">S->I</bell-button>
         <bell-button goto="L" bind="X">S~X=>L</bell-button>
+        <bell-pod points="S A">
+          <p>WW</p>
+        </bell-pod>
       </bell-point>
       <bell-point name="A">
         <bell-button step="S">A->S</bell-button>
@@ -118,6 +121,13 @@
       </bell-point>
       <bell-point name="C">
         <bell-button step="S">C->S</bell-button>
+        <bell-button step="I">C->I</bell-button>
+        <bell-point class="I">
+          <bell-button step="C">I->C</bell-button>
+        </bell-point>
+        <bell-pod points="C I">
+          <p>Pod elem</p>
+        </bell-pod>
       </bell-point>
       <bell-point class="E">
         <bell-button step="S">E->S</bell-button>
