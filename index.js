@@ -430,15 +430,17 @@ class BellPoint extends BellhopElement {
    * @arg {BellPoint} point
    * @arg {string?} ain
    * @arg {string?} aex
+   * @arg {string?} bind
+   * @arg {boolean} isSkip
    * @protected
   */
-  _transit(point, ain, aex, bind) {
+  _transit(point, ain, aex, bind, isSkip) {
 
     const bellhop = this.getBellhop();
     const bellhopBind = this.getBellhop(bind);
     const isDeep = bellhop !== bellhopBind && bellhop.contains(bellhopBind);
     const endpoint = isDeep ? point : null;
-
+    
     ain = ain ? ain : point.ain ? point.ain : isDeep ? bellhop?.ain : bellhopBind?.ain ?? null;
     aex = aex ? aex : this.aex ? this.aex : isDeep ? bellhop?.aex : bellhopBind?.aex ?? null;
 
@@ -469,7 +471,7 @@ class BellPoint extends BellhopElement {
       if (pod.points.includes(this.name)) this.getWrapper().append(pod._clone = pod.elem.cloneNode(true));
     };
 
-    if (ain || aex) [ain ? [point, ain] : null, aex ? [bind && !isDeep ? this.getBellhop().closest(BellPoint._tag) : this, aex] : null].filter(e => e).forEach(entry => {
+    if ((ain || aex) && !isSkip) [ain ? [point, ain] : null, aex ? [bind && !isDeep ? this.getBellhop().closest(BellPoint._tag) : this, aex] : null].filter(e => e).forEach(entry => {
       const [p, a] = entry;
 
       p.transit = new Promise(resolve => {
@@ -498,15 +500,16 @@ class BellPoint extends BellhopElement {
    * @arg {BellButton|BellPoint|string} to
    * @arg {string?} ain
    * @arg {string?} aex
+   * @arg {boolean?} isSkip
   */
-  goto(to, ain, aex, bind) {
+  goto(to, ain, aex, bind, isSkip) {
 
     const bellhop = this.getBellhop(bind);
 
     if (to instanceof BellButton) to = to.getAttribute('goto');
     if (typeof to === 'string') to = bellhop.getPoint(to);
 
-    this._transit(to, ain, aex, bind);
+    this._transit(to, ain, aex, bind, isSkip);
 
     return this;
   };
@@ -515,8 +518,9 @@ class BellPoint extends BellhopElement {
    * @arg {BellButton|BellPoint|string} step
    * @arg {string?} ain
    * @arg {string?} aex
+   * @arg {boolean?} isSkip
   */
-  step(step, ain, aex) {
+  step(step, ain, aex, isSkip) {
 
     const parentPoint = this.parentElement;
 
@@ -524,7 +528,7 @@ class BellPoint extends BellhopElement {
     if (typeof step === 'string') step = this.getBellhop().getPoint(step);
 
     if (parentPoint instanceof BellPoint && parentPoint === step) {
-      this._transit(parentPoint, ain, aex);
+      this._transit(parentPoint, ain, aex, null, isSkip);
       return this;
     };
 
@@ -532,14 +536,14 @@ class BellPoint extends BellhopElement {
     const neighbourPoint = Array.from(parentPoint.children).find(point => point === step);
 
     if (neighbourPoint) {
-      this._transit(neighbourPoint, ain, aex);
+      this._transit(neighbourPoint, ain, aex, null, isSkip);
       return this;
     };
 
     const innerPoint = Array.from(this.children).find(point => point instanceof BellPoint && point === step);
 
     if (innerPoint) {
-      this._transit(innerPoint, ain, aex);
+      this._transit(innerPoint, ain, aex, null, isSkip);
     };
 
     return this;
@@ -640,7 +644,7 @@ class BellPoint extends BellhopElement {
    * @returns {BellPoint[]}
   */
   getNextPoints() {
-    return Array.from(this.children).filter(e => e instanceof BellButton && e.step).map(b => b.getBellhop().getPoint(b.step));
+    return Array.from(this.getWrapper().children).filter(e => e instanceof BellButton && e.step).map(b => b.getBellhop().getPoint(b.step));
   };
   /**
    * Get all endpoints where it is possible to move through a step.
@@ -740,6 +744,11 @@ class Bellhop extends BellhopElement {
     }
 
     `;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      for (const b of document.querySelectorAll(Bellhop._tag)) b._setActivePointByUrl();
+    });
+
   };
 
   constructor() {
@@ -751,6 +760,7 @@ class Bellhop extends BellhopElement {
 
     const slot = document.createElement('slot');
     shadow.append(slot);
+
   };
 
   get ain() {
@@ -785,12 +795,19 @@ class Bellhop extends BellhopElement {
   /**
    * Moves from the active end point to the specified one.
    * @arg {BellPoint} to
+   * @arg {boolean?} isSkip
   */
-  stepTo(to) {
-    const steps = this.getSteps(null, to);
+  async stepTo(to, isSkip) {
+    const paths = this.getSteps(to);
+    const path = paths.find(path => path.includes(this.getActivePoint()));
 
-    if (steps.length) for (let index = 0; index < steps.length; index++) {
-      const point = steps[0];
+    if (!path) {
+      throw new Error(`The step To move is not possible because there is no possible path from the current point to the final point.`);
+    };
+
+    while (path.length !== 1) {
+      path.shift().step(path[0], null, null, isSkip);
+      if (!isSkip) await path[0].transit;
     };
 
     return this;
@@ -817,7 +834,7 @@ class Bellhop extends BellhopElement {
    * @arg {BellPoint} root
    * @arg {BellPoint?} to
   */
-  getSteps(root = this.getRootPoint(), to) {
+  getSteps(to, root = this.getRootPoint()) {
     const rootPoint = root;
 
     if (!rootPoint) {
@@ -830,6 +847,7 @@ class Bellhop extends BellhopElement {
     while (nextPaths.length) {
 
       const path = nextPaths.pop();
+      /** @type {BellPoint} */
       const lastpoint = path.at(-1);
       const nextPoints = lastpoint.getNextPoints();
 
@@ -881,6 +899,25 @@ class Bellhop extends BellhopElement {
   */
   getPrevPoint() {
     return this._getUniquePoint('prev');
+  };
+
+  /**
+   * 
+  */
+  _setActivePointByUrl() {
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    const isSkip = !!params.get(`bell-hop-${this.name}-skip`);
+
+    const _moveStr = `bell-hop-${this.name}-`;
+    const to = params.get(_moveStr + 'goto');
+    const step = params.get(_moveStr + 'step');
+
+    if (to) this.getActivePoint().goto(to, null, null, null, isSkip);
+    else if (step) this.stepTo(this.getPoint(step), isSkip);
+
+    return this;
   };
 
   /**
