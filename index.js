@@ -1,3 +1,17 @@
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Define bell-hop tag's.
+  [
+    Bellhop,
+    BellPod,
+    BellEven,
+    BellPoint,
+    BellButton,
+    BellWrapper,
+  ].forEach(c => customElements.define(c._tag, c));
+
+});
+
 /**
  * Base Bellhop class.
  * @class
@@ -644,7 +658,7 @@ class BellPoint extends BellhopElement {
    * @returns {BellPoint[]}
   */
   getNextPoints() {
-    return Array.from(this.getWrapper().children).filter(e => e instanceof BellButton && e.step).map(b => b.getBellhop().getPoint(b.step));
+    return Array.from(this.getWrapper().querySelectorAll(BellButton._tag)).filter(e => e.step).map(b => b.getBellhop().getPoint(b.step));
   };
   /**
    * Get all endpoints where it is possible to move through a step.
@@ -676,79 +690,9 @@ class Bellhop extends BellhopElement {
   };
 
   static {
-
-    // Creating a stylistic library block.
-    const style = document.createElement('style');
-    document.head.append(style);
-
-    style.innerHTML = `
-
-    ${BellPod._tag} {
-      display: none;
-    }
-
-    ${Bellhop._tag},
-    ${BellPoint._tag},
-    ${BellWrapper._tag} {
-      gap: 5px;
-      display: flex;
-      flex-flow: column;  
-      align-items: center;
-      justify-content: center;
-    }
-
-    ${BellPoint._tag},
-    ${BellWrapper._tag} {
-      width: 100%;
-      height: 100%;
-    }
-
-    ${Bellhop._tag} {
-      position: relative;
-    }
-
-    ${BellPoint._tag} {
-      & {
-        position: absolute;
-      }
-      &[transit] {
-        pointer-events: none;
-      }
-      &:not(
-        [active],
-        [transit],
-        :has(
-          ${BellPoint._tag}[active],
-          ${BellPoint._tag}[transit]
-        )
-      ) {
-        & {
-          display: none;
-        }
-      }
-      &:not([active], [transit]):has(
-        ${BellPoint._tag}[active],
-        ${BellPoint._tag}[transit]
-      ) {
-        & > ${BellWrapper._tag} {
-          display: none;
-        }
-      }
-    }
-
-    ${Bellhop._tag} ${BellPoint._tag}:not([active], [transit]):has(
-      ${Bellhop._tag} ${BellPoint._tag}[active],
-      ${Bellhop._tag} ${BellPoint._tag}[transit]
-    ) {
-      display: none;
-    }
-
-    `;
-
     document.addEventListener('DOMContentLoaded', () => {
       for (const b of document.querySelectorAll(Bellhop._tag)) b._setActivePointByUrl();
     });
-
   };
 
   constructor() {
@@ -944,15 +888,77 @@ class Bellhop extends BellhopElement {
 
 };
 
-// Define bellhop tag's.
-[
-  Bellhop,
-  BellPod,
-  BellEven,
-  BellPoint,
-  BellButton,
-  BellWrapper,
-].forEach(c => customElements.define(c._tag, c));
+(() => {
+
+  // Define bell-hop style's.
+  const style = document.createElement('style');
+  document.head.append(style);
+
+  style.innerHTML = `
+
+  ${BellPod._tag} {
+    display: none;
+  }
+
+  ${Bellhop._tag},
+  ${BellPoint._tag},
+  ${BellWrapper._tag} {
+    gap: 5px;
+    display: flex;
+    flex-flow: column;  
+    align-items: center;
+    justify-content: center;
+  }
+
+  ${BellPoint._tag},
+  ${BellWrapper._tag} {
+    width: 100%;
+    height: 100%;
+  }
+
+  ${Bellhop._tag} {
+    position: relative;
+  }
+
+  ${BellPoint._tag} {
+    & {
+      position: absolute;
+    }
+    &[transit] {
+      pointer-events: none;
+    }
+    &:not(
+      [active],
+      [transit],
+      :has(
+        ${BellPoint._tag}[active],
+        ${BellPoint._tag}[transit]
+      )
+    ) {
+      & {
+        display: none;
+      }
+    }
+    &:not([active], [transit]):has(
+      ${BellPoint._tag}[active],
+      ${BellPoint._tag}[transit]
+    ) {
+      & > ${BellWrapper._tag} {
+        display: none;
+      }
+    }
+  }
+
+  ${Bellhop._tag} ${BellPoint._tag}:not([active], [transit]):has(
+    ${Bellhop._tag} ${BellPoint._tag}[active],
+    ${Bellhop._tag} ${BellPoint._tag}[transit]
+  ) {
+    display: none;
+  }
+
+  `;
+
+})();
 
 /**
  * @file Bellhop library index file.
