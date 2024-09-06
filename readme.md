@@ -3,7 +3,7 @@
     <strong>bell-hop</strong>
   </p>
   <p style="height: min-content;">
-    <strong style="background-color: #e565ff40; padding: 3px; border-radius: 3px; letter-spacing: 2px;">v1.0.0</strong>
+    <strong style="background-color: #e565ff40; padding: 3px; border-radius: 3px; letter-spacing: 2px;">v2.0.0</strong>
   </p>
 </div></br>
 
@@ -12,6 +12,7 @@
 <h2 align=center id=content>Содержание</h2>
 
 - [**bell-hop**](#header)
+  - [**Что нового?**](#feature)
   - [**Содержание**](#content)
   - [**Описание**](#description)
   - [**Быстрый старт**](#quickstart)
@@ -52,6 +53,54 @@
         - [_`bell-hop-<point-name>-goto`_](#guide-goto)
         - [_`bell-hop-<point-name>-step`_](#guide-step)
         - [_`bell-hop-<point-name>-skip`_](#guide-skip)
+
+<h2 align=center id=feature>Что нового?</h2>
+
+Версия `2.0.0` появилась почти что сразу же после выпуска в релиз версии `1.0.0`. Основой для идеи данного выпуска послужил [`react-router-dom`](https://github.com/remix-run/react-router). Что же было взято и что изменилось в проекте?
+
+### Разделение планировки и разметки
+Ранее в версии `1.0.0` разметка выглядела следующим образом:
+
+```html
+<body>
+  <bell-hop class="main">
+    <bell-point class="home" root active>
+      <div>Home</div>
+    </bell-point>
+    <bell-point class="school">
+      <div>School</div>
+    </bell-point>
+  </bell-hop>
+</body>
+```
+<p align=center><i>Пример разметки v1.0.0</i></p>
+
+Данный пример является максимально простым по меркам `bell-hop`. Даже такой вариант является очень сложным для понимания. При масштабировании сложность существенно увеличивается. Во многом это связано с тем, что проектирование [коридора](#bell-hop) и разметка осуществляются не раздельно.
+
+Новая версия `2.0.0` разделяет проектирование и разметку. Теперь итоговый вариант выглядит следующим образом:
+
+```html
+<body>
+  <bell-hop name="main" loc="body">
+    <bell-point name="home"></bell-point>
+    <bell-point name="school"></bell-point>
+  </bell-hop>
+
+  <bell-route bind="main" point="home">
+    <div>Home</div>
+  </bell-route>
+
+  <bell-route bind="main" point="school">
+    <div>School</div>
+  </bell-route>
+</body>
+```
+<p align=center><i>Пример разметки v2.0.0</i></p>
+
+Данное решение существенно отличается от первого варианта. В нём логика разделена друг от друга. Это существенно упрощает разработку сложных интерфейсов.
+
+### Эндпоинтный подход разработки
+
 
 <h2 align=center id=description>Описание</h2>
 

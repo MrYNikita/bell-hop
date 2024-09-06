@@ -28,39 +28,20 @@
       h1 {
         font-family: 'Courier New', Courier, monospace;
       }
-      bell-button {
-        width: 200px;
-        text-align: center;
-        padding: 5px;
+      button {
+        width: 100px;
+        height: 20px;
         border-radius: 3px;
-        background-color: #cc00ff;
-      }
-      bell-hop.Y {
-        overflow: hidden;
-        width: 300px !important;
-        height: 400px !important;
-        border-radius: 13px;
-        border: 5px solid #7b00b5;
-        background-color: #7f005599;
-      }
-      bell-hop.X {
-        & {
-          overflow: hidden;
-          width: 90%;
-          height: 70%;
-          border-radius: 3px;
-          background-color: #33004b;
+        outline: none;
+        border: none;
+        background-color: #fcdcff3d;
+        transition: all .5s;
+        position: relative;
+        &:hover {
+          width: 120px;
+          height: 40px;
+          animation: button 1s infinite reverse;
         }
-        & bell-button {
-          background-color: #4000ff;
-        }
-        & p.terminal.string i {
-          color: #855cff;
-          font-family: 'Courier New', Courier, monospace;
-        }
-      }
-      bell-point {
-        gap: 5px;
       }
       .begin {
         animation: begin 1s forwards ease-in-out;
@@ -88,82 +69,49 @@
           transform: translateX(-250px);
         }
       }
+      /* @keyframes button {
+        25% {
+          rotate: -10deg;
+          background-color: #860092;
+        }
+        75% {
+          rotate: 10deg;
+          background-color: #b81ec9;
+        }
+      } */
     </style>
+    <script src="index.js"></script>
   </head>
   <body>
     <h1>bell-hop</h1>
-    <bell-hop class="Y" ain="begin" aex="exit">
-      <bell-point active root name="S">
-        <bell-button step="A">S->A</bell-button>
-        <bell-button step="B">S->B</bell-button>
-        <bell-button step="C">S->C</bell-button>
-        <bell-button goto="D">S=>D</bell-button>
-        <bell-button step="E">S->E</bell-button>
-        <bell-button step="F">S->F</bell-button>
-        <bell-button step="G">S->G</bell-button>
-        <bell-button step="I">S->I</bell-button>
-        <bell-button goto="L" bind="X">S~X=>L</bell-button>
-        <bell-pod points="S A L">
-          <p>WW</p>
-        </bell-pod>
-      </bell-point>
-      <bell-point name="A">
-        <bell-button step="S">A->S</bell-button>
-        <bell-button step="D">A->D</bell-button>
-        <bell-point name="D">
-          <bell-button goto="S">D=>S</bell-button>
-          <bell-button step="A">D->A</bell-button>
-        </bell-point>
-      </bell-point>
-      <bell-point name="B">
-        <bell-button step="S">B->S</bell-button>
-        <bell-even act="alert(self)"></bell-even>
-      </bell-point>
-      <bell-point name="C">
-        <bell-button step="S">C->S</bell-button>
-        <bell-button step="N">C->I</bell-button>
-        <bell-point class="N">
-          <bell-button step="C">I->C</bell-button>
-        </bell-point>
-        <bell-pod points="C N">
-          <p>Pod elem</p>
-        </bell-pod>
-      </bell-point>
-      <bell-point class="E">
-        <bell-button step="S">E->S</bell-button>
-      </bell-point>
-      <bell-point class="F" time="1000" to="S">
-        <p>After one second...</p>
-      </bell-point>
-      <bell-point class="G">
-        <bell-button step="S">G->S</bell-button>
-        <bell-hop class="X">
-          <bell-point class="H" root active>
-            <p class="terminal string"><i>Modest bell-hop terminal_</i></p>
-            <bell-button step="L">H->L</bell-button>
-            <bell-button bind="Y" goto="S">H~Y=>S</bell-button>
-            <bell-button bind="Y" goto="D">H~Y=>D</bell-button>
-          </bell-point>
-          <bell-point class="L">
-            <bell-button step="H">L->H</bell-button>
-            <bell-button goto="S" bind="Y">L~Y=>S</bell-button>
-          </bell-point>
-        </bell-hop>
-      </bell-point>
-      <bell-point class="I">
-        <bell-button step="S">I->S</bell-button>
-        <bell-button step="T">I->T</bell-button>
-        <bell-point class="T">
-          <bell-button step="I">T->I</bell-button>
-          <bell-button step="J">T->J</bell-button>
-          <bell-point class="J">
-            <p>The End.</p>
-            <bell-button step="T">J->T</bell-button>
-            <bell-button goto="S">J=>S</bell-button>
-          </bell-point>
-        </bell-point>
+
+    <bell-hop name="main" loc="body">
+      <bell-point name="home" root active></bell-point>
+      <bell-point name="shop"></bell-point>
+      <bell-point name="school">
+        <bell-point name="classroom"></bell-point>
+        <bell-point name="gym"></bell-point>
+        <bell-point name="library"></bell-point>
       </bell-point>
     </bell-hop>
-    <script src="index.js"></script>
+
+    <bell-route bind="main" point="home">
+      <section>Home</section>
+      <button bell-step="shop">Shop</button>
+      <button bell-step="school">School</button>
+    </bell-route>
+
+    <bell-route bind="main" point="shop">
+      <section>Shop</section>
+      <button bell-step="home">Home</button>
+    </bell-route>
+
+    <bell-route bind="main" point="school">
+      <section>School</section>
+      <button bell-step="gym">Gym</button>
+      <button bell-step="home">Home</button>
+      <button bell-step="classroom">Classroom</button>
+    </bell-route>
+
   </body>
 </html>
