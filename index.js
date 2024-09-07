@@ -156,6 +156,16 @@ class BellRoute extends BellElem {
       Array.from(document.querySelectorAll(this)).forEach(route => {
         Array.from(route.children).forEach(child => child.setAttribute(BellRoute, `${route.bind}`));
       });
+      Array.from(document.querySelectorAll('button[bell-step]')).forEach(button => button.addEventListener('click', () => {
+        const attr = button.getAttribute('bell-step');
+        const route = Bellhop.get(button.closest(`*[${BellRoute}]`).getAttribute(BellRoute)).getRoute(attr);
+        if (route) route.getHop().step(route.getPoint());
+      }));
+      Array.from(document.querySelectorAll('button[bell-goto]')).forEach(button => button.addEventListener('click', () => {
+        const attr = button.getAttribute('bell-goto');
+        const route = Bellhop.get(button.closest(`*[${BellRoute}]`).getAttribute(BellRoute)).getRoute(attr);
+        if (route) route.getHop().goto(route.getPoint());
+      }));
     });
   };
 
@@ -174,12 +184,6 @@ class BellRoute extends BellElem {
   };
 
   _transit() {
-
-  };
-  step() {
-
-  };
-  goto() {
 
   };
 
@@ -206,17 +210,6 @@ class Bellhop extends BellElem {
   static {
     document.addEventListener('DOMContentLoaded', () => {
       Array.from(document.querySelectorAll(Bellhop)).forEach(bellhop => bellhop.activatePoint(bellhop.getActivePoint()));
-      
-      Array.from(document.querySelectorAll('button[bell-step]')).forEach(button => button.addEventListener('click', () => {
-
-        const attr = button.getAttribute('bell-step');
-        const route = Bellhop.get(button.closest(`*[${BellRoute}]`).getAttribute(BellRoute)).getRoute(attr);
-
-        if (!route) return;
-        
-        route.step();
-
-      }));
     });
   };
 
@@ -249,7 +242,7 @@ class Bellhop extends BellElem {
     this.activatePoint(point);
   };
   /**
-   * @arg {BellPoint|string}
+   * @arg {BellPoint|string} point
   */
   step(point) {
 
@@ -276,6 +269,10 @@ class Bellhop extends BellElem {
    * @arg {BellPoint|string}
   */
   goto(point) {
+    if (typeof point === 'string') point = document.querySelector(point);
+    
+    this._transit(point);
+
     return this;
   };
 
